@@ -1,7 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import MainLayout from '../layouts/MainLayout';
-import {  ProtectedRoute } from './guards';
+import AdminLayout from '../layouts/AdminLayout';
+import { AdminRoute, ProtectedRoute } from './guards';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import HomePage from '../pages/user/HomePage';
@@ -12,6 +13,13 @@ import BookingFlowPage from '../pages/user/BookingFlowPage';
 import ProfilePage from '../pages/user/ProfilePage';
 import MyBookingsPage from '../pages/user/MyBookingsPage';
 import HistoryPage from '../pages/user/HistoryPage';
+import AdminDashboardPage from '../pages/admin/AdminDashboardPage';
+import AdminMoviesPage from '../pages/admin/AdminMoviesPage';
+import AdminCinemasPage from '../pages/admin/AdminCinemasPage';
+import AdminShowtimesPage from '../pages/admin/AdminShowtimesPage';
+import AdminBookingsPage from '../pages/admin/AdminBookingsPage';
+import AdminUsersPage from '../pages/admin/AdminUsersPage';
+import AdminAccessPage from '../pages/admin/AdminAccessPage';
 
 export function RouterProvider() {
   return (
@@ -32,6 +40,18 @@ export function RouterProvider() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/bookings" element={<MyBookingsPage />} />
           <Route path="/history" element={<HistoryPage />} />
+        </Route>
+
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="movies" element={<AdminMoviesPage />} />
+            <Route path="cinemas" element={<AdminCinemasPage />} />
+            <Route path="showtimes" element={<AdminShowtimesPage />} />
+            <Route path="bookings" element={<AdminBookingsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="access" element={<AdminAccessPage />} />
+          </Route>
         </Route>
       </Route>
 

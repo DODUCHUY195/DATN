@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export const useBookingStore = create((set) => ({
   selectedMovie: null,
@@ -20,8 +20,16 @@ export const useBookingStore = create((set) => ({
     }),
   updateSnackQuantity: (snack, quantity) =>
     set((state) => {
-      const items = state.selectedSnacks.filter((item) => item.snackId !== snack.id);
-      if (quantity > 0) items.push({ snackId: snack.id, name: snack.name, price: snack.price, quantity });
+      const items = state.selectedSnacks.filter(
+        (item) => item.snackId !== snack.id,
+      );
+      if (quantity > 0)
+        items.push({
+          snackId: snack.id,
+          name: snack.name,
+          price: snack.price,
+          quantity,
+        });
       return { selectedSnacks: items };
     }),
   setHeldBooking: (heldBooking) => set({ heldBooking }),
