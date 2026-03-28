@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { Clock3, PlayCircle } from "lucide-react";
 import { formatDate } from "../../utils/format";
-import {BASE_URL_API} from '../../constants/env'
 
 export default function MovieCard({ movie }) {
   return (
@@ -9,8 +8,7 @@ export default function MovieCard({ movie }) {
       <div className="aspect-square bg-slate-200 relative">
         {movie.posterUrl ? (
           <img
-            // src={movie.posterUrl}
-            src={`${BASE_URL_API ?? "http://localhost:3000"}${movie.posterUrl}`}
+            src={movie.posterUrl}
             alt={movie.title}
             className="h-full w-full object-cover"
           />

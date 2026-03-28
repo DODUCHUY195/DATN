@@ -35,7 +35,7 @@ const listUsers = async (req, res) => {
 const lockUser = async (req, res) => {
   const row = await User.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy tài khoản.");
+    throw new ApiError(404, "User not found.");
   }
   row.isLocked = Boolean(req.body.isLocked);
   await row.save();
@@ -60,7 +60,7 @@ const createMovie = async (req, res) => {
 const updateMovie = async (req, res) => {
   const row = await Movie.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy phim.");
+    throw new ApiError(404, "Movie not found.");
   }
 
   Object.assign(row, req.body);
@@ -81,7 +81,7 @@ const updateMovie = async (req, res) => {
 const deleteMovie = async (req, res) => {
   const row = await Movie.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy phim.");
+    throw new ApiError(404, "Movie not found.");
   }
   await row.destroy();
   return res.json({ message: "Movie deleted." });
@@ -121,12 +121,12 @@ const listRooms = async (req, res) => {
 const configureSeats = async (req, res) => {
   const room = await Room.findByPk(req.params.roomId);
   if (!room) {
-    throw new ApiError(404, "Không tìm thấy phòng.");
+    throw new ApiError(404, "Room not found.");
   }
 
   const { seats } = req.body;
   if (!Array.isArray(seats) || seats.length === 0) {
-    throw new ApiError(400, "Vui lòng chọn ghế.");
+    throw new ApiError(400, "seats array is required.");
   }
 
   await sequelize.transaction(async (transaction) => {
@@ -172,7 +172,7 @@ const hasRoomTimeConflict = async ({
 const createShowtime = async (req, res) => {
   const payload = req.body;
   if (dayjs(payload.endTime).isBefore(dayjs(payload.startTime))) {
-    throw new ApiError(400, "Thời gian kết thúc phải sau thời gian bắt đầu.");
+    throw new ApiError(400, "endTime must be after startTime.");
   }
 
   const conflict = await hasRoomTimeConflict({
@@ -182,7 +182,7 @@ const createShowtime = async (req, res) => {
   });
 
   if (conflict) {
-    throw new ApiError(409, "Lịch phòng bị trùng với suất chiếu đã tồn tại.");
+    throw new ApiError(409, "Room schedule conflicts with existing showtime.");
   }
 
   const row = await Showtime.create(payload);
@@ -192,7 +192,7 @@ const createShowtime = async (req, res) => {
 const updateShowtime = async (req, res) => {
   const row = await Showtime.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy suất chiếu.");
+    throw new ApiError(404, "Showtime not found.");
   }
 
   const startTime = req.body.startTime || row.startTime;
@@ -207,7 +207,7 @@ const updateShowtime = async (req, res) => {
   });
 
   if (conflict) {
-    throw new ApiError(409, "Lịch phòng bị trùng với suất chiếu đã tồn tại.");
+    throw new ApiError(409, "Room schedule conflicts with existing showtime.");
   }
 
   Object.assign(row, req.body);
@@ -218,7 +218,7 @@ const updateShowtime = async (req, res) => {
 const deleteShowtime = async (req, res) => {
   const row = await Showtime.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy suất chiếu.");
+    throw new ApiError(404, "Showtime not found.");
   }
   await row.destroy();
   return res.json({ message: "Showtime deleted." });
@@ -247,7 +247,7 @@ const listBookingsAdmin = async (req, res) => {
 const confirmBookingAdmin = async (req, res) => {
   const row = await Booking.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+    throw new ApiError(404, "Booking not found.");
   }
 
   row.status = "CONFIRMED";

@@ -210,11 +210,11 @@ const confirmPayment = async ({ bookingId, userId, method = "DEMO" }) => {
     }
 
     if (booking.status !== "HOLD") {
-      throw new ApiError(400, "Không thể xác nhận đặt vé.");
+      throw new ApiError(400, "Booking cannot be confirmed.");
     }
 
     if (booking.expiresAt && dayjs(booking.expiresAt).isBefore(dayjs())) {
-      throw new ApiError(400, "Thời gian giữ chỗ đã hết hạn.");
+      throw new ApiError(400, "Booking hold has expired.");
     }
 
     await SeatReservation.update(
@@ -281,7 +281,7 @@ const cancelBooking = async ({ bookingId, userId, isAdmin = false }) => {
     });
 
     if (!booking || (!isAdmin && booking.userId !== userId)) {
-      throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+      throw new ApiError(404, "Booking not found.");
     }
 
     if (booking.status === "CANCELED") {
@@ -293,7 +293,7 @@ const cancelBooking = async ({ bookingId, userId, isAdmin = false }) => {
       booking.status === "CONFIRMED" &&
       dayjs(booking.Showtime.startTime).diff(dayjs(), "hour") < 2
     ) {
-      throw new ApiError(400, "Đã quá thời hạn để huỷ đặt vé.");
+      throw new ApiError(400, "Too late to cancel booking.");
     }
 
     booking.status = "CANCELED";

@@ -247,7 +247,7 @@ const listBookingsAdmin = async (req, res) => {
 const confirmBookingAdmin = async (req, res) => {
   const row = await Booking.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+    throw new ApiError(404, "Booking not found.");
   }
 
   row.status = "CONFIRMED";

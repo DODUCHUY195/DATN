@@ -87,7 +87,7 @@ const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
     });
 
     if (seats.length !== seatIds.length) {
-      throw new ApiError(400, "Một số ghế không hợp lệ trong phòng này.");
+      throw new ApiError(400, "Some seats are invalid for this room.");
     }
 
     const now = new Date();
@@ -108,7 +108,7 @@ const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
     });
 
     if (conflicts.length > 0) {
-      throw new ApiError(409, "Một số ghế đã được đặt trước.");
+      throw new ApiError(409, "Some seats are already reserved.");
     }
 
     const expiresAt = dayjs().add(env.seatHoldMinutes, "minute").toDate();
@@ -156,7 +156,7 @@ const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
       for (const item of snacks) {
         const snack = snackRows.find((s) => s.id === item.snackId);
         if (!snack) {
-          throw new ApiError(400, `Snack ${item.snackId} không hợp lệ.`);
+          throw new ApiError(400, `Snack ${item.snackId} is invalid.`);
         }
         const quantity = Number(item.quantity || 1);
         const snackPrice = Number(snack.price) * quantity;
@@ -206,15 +206,15 @@ const confirmPayment = async ({ bookingId, userId, method = "DEMO" }) => {
     });
 
     if (!booking || booking.userId !== userId) {
-      throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+      throw new ApiError(404, "Booking not found.");
     }
 
     if (booking.status !== "HOLD") {
-      throw new ApiError(400, "Không thể xác nhận đặt vé.");
+      throw new ApiError(400, "Booking cannot be confirmed.");
     }
 
     if (booking.expiresAt && dayjs(booking.expiresAt).isBefore(dayjs())) {
-      throw new ApiError(400, "Thời gian giữ chỗ đã hết hạn.");
+      throw new ApiError(400, "Booking hold has expired.");
     }
 
     await SeatReservation.update(
@@ -281,7 +281,7 @@ const cancelBooking = async ({ bookingId, userId, isAdmin = false }) => {
     });
 
     if (!booking || (!isAdmin && booking.userId !== userId)) {
-      throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+      throw new ApiError(404, "Booking not found.");
     }
 
     if (booking.status === "CANCELED") {
@@ -293,7 +293,7 @@ const cancelBooking = async ({ bookingId, userId, isAdmin = false }) => {
       booking.status === "CONFIRMED" &&
       dayjs(booking.Showtime.startTime).diff(dayjs(), "hour") < 2
     ) {
-      throw new ApiError(400, "Đã quá thời hạn để huỷ đặt vé.");
+      throw new ApiError(400, "Too late to cancel booking.");
     }
 
     booking.status = "CANCELED";

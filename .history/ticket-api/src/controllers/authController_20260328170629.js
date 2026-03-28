@@ -39,16 +39,16 @@ const login = async (req, res) => {
 
   const user = await User.findOne({ where: { email } });
   if (!user) {
-    throw new ApiError(401, "Email hoặc mật khẩu không hợp lệ.");
+    throw new ApiError(401, "Email or password is invalid.");
   }
 
   if (user.isLocked) {
-    throw new ApiError(403, "Tài khoản đã bị khoá.");
+    throw new ApiError(403, "Account is locked.");
   }
 
   const isValid = await bcrypt.compare(password || "", user.passwordHash);
   if (!isValid) {
-    throw new ApiError(401, "Email hoặc mật khẩu không hợp lệ.");
+    throw new ApiError(401, "Email or password is invalid.");
   }
 
   const token = signToken(user);

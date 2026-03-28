@@ -293,7 +293,7 @@ const cancelBooking = async ({ bookingId, userId, isAdmin = false }) => {
       booking.status === "CONFIRMED" &&
       dayjs(booking.Showtime.startTime).diff(dayjs(), "hour") < 2
     ) {
-      throw new ApiError(400, "Đã quá thời hạn để huỷ đặt vé.");
+      throw new ApiError(400, "Too late to cancel booking.");
     }
 
     booking.status = "CANCELED";

@@ -172,7 +172,7 @@ const hasRoomTimeConflict = async ({
 const createShowtime = async (req, res) => {
   const payload = req.body;
   if (dayjs(payload.endTime).isBefore(dayjs(payload.startTime))) {
-    throw new ApiError(400, "Thời gian kết thúc phải sau thời gian bắt đầu.");
+    throw new ApiError(400, "endTime must be after startTime.");
   }
 
   const conflict = await hasRoomTimeConflict({
@@ -182,7 +182,7 @@ const createShowtime = async (req, res) => {
   });
 
   if (conflict) {
-    throw new ApiError(409, "Lịch phòng bị trùng với suất chiếu đã tồn tại.");
+    throw new ApiError(409, "Room schedule conflicts with existing showtime.");
   }
 
   const row = await Showtime.create(payload);
@@ -192,7 +192,7 @@ const createShowtime = async (req, res) => {
 const updateShowtime = async (req, res) => {
   const row = await Showtime.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy suất chiếu.");
+    throw new ApiError(404, "Showtime not found.");
   }
 
   const startTime = req.body.startTime || row.startTime;
@@ -207,7 +207,7 @@ const updateShowtime = async (req, res) => {
   });
 
   if (conflict) {
-    throw new ApiError(409, "Lịch phòng bị trùng với suất chiếu đã tồn tại.");
+    throw new ApiError(409, "Room schedule conflicts with existing showtime.");
   }
 
   Object.assign(row, req.body);
@@ -218,7 +218,7 @@ const updateShowtime = async (req, res) => {
 const deleteShowtime = async (req, res) => {
   const row = await Showtime.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy suất chiếu.");
+    throw new ApiError(404, "Showtime not found.");
   }
   await row.destroy();
   return res.json({ message: "Showtime deleted." });
@@ -247,7 +247,7 @@ const listBookingsAdmin = async (req, res) => {
 const confirmBookingAdmin = async (req, res) => {
   const row = await Booking.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+    throw new ApiError(404, "Booking not found.");
   }
 
   row.status = "CONFIRMED";

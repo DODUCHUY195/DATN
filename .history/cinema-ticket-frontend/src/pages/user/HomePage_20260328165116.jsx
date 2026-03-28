@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              Nền tảng đặt vé xem phim
+              Cinema booking platform
             </p>
             <h1 className="mt-4 text-4xl font-bold md:text-5xl">
               Đặt vé xem phim hiện đại, mượt và trực quan.

@@ -5,7 +5,6 @@ import ErrorState from "../../components/common/ErrorState";
 import { useMovies } from "../../hooks/useMovies";
 import { useShowtimes } from "../../hooks/useShowtimes";
 import { formatDateTime } from "../../utils/format";
-import { BASE_URL_API } from "../../constants/env";
 
 export default function HomePage() {
   const moviesQuery = useMovies({ status: "NOW_SHOWING" });
@@ -17,7 +16,7 @@ export default function HomePage() {
         <div className="grid items-center gap-8 md:grid-cols-2">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-white/70">
-              Nền tảng đặt vé xem phim
+              Cinema booking platform
             </p>
             <h1 className="mt-4 text-4xl font-bold md:text-5xl">
               Đặt vé xem phim hiện đại, mượt và trực quan.
@@ -115,12 +114,11 @@ export default function HomePage() {
         ) : (
           <div className="grid gap-4 lg:grid-cols-3">
             {showtimesQuery.data?.slice(0, 6).map((showtime) => (
-              <div className="card-premium flex overflow-hidden">
+              <div className="card-premium flex">
                 <div className="w-36 shrink-0 relative flex items-center justify-center">
                   {showtime.Movie?.posterUrl ? (
                     <img
-                      // src={showtime.Movie?.posterUrl}
-                      src={`${BASE_URL_API ?? "http://localhost:3000"}${showtime.Movie?.posterUrl}`}
+                      src={showtime.Movie?.posterUrl}
                       alt={showtime.Movie?.title}
                       className="h-full w-full object-cover"
                     />

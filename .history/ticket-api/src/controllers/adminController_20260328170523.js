@@ -218,7 +218,7 @@ const updateShowtime = async (req, res) => {
 const deleteShowtime = async (req, res) => {
   const row = await Showtime.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy suất chiếu.");
+    throw new ApiError(404, "Showtime not found.");
   }
   await row.destroy();
   return res.json({ message: "Showtime deleted." });
@@ -247,7 +247,7 @@ const listBookingsAdmin = async (req, res) => {
 const confirmBookingAdmin = async (req, res) => {
   const row = await Booking.findByPk(req.params.id);
   if (!row) {
-    throw new ApiError(404, "Không tìm thấy đơn đặt vé.");
+    throw new ApiError(404, "Booking not found.");
   }
 
   row.status = "CONFIRMED";
