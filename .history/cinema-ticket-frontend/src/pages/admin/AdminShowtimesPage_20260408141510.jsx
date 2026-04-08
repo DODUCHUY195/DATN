@@ -241,21 +241,21 @@ export default function AdminShowtimesPage() {
         return;
       }
 
-      // const matchedMovie = (moviesQuery.data || []).find(
-      //   (movie) => String(movie.id) === String(createdShowtime.movieId),
-      // );
+      const matchedMovie = (moviesQuery.data || []).find(
+        (movie) => String(movie.id) === String(createdShowtime.movieId),
+      );
 
-      // const matchedRoom = (roomsQuery.data || []).find(
-      //   (room) => String(room.id) === String(createdShowtime.roomId),
-      // );
+      const matchedRoom = (roomsQuery.data || []).find(
+        (room) => String(room.id) === String(createdShowtime.roomId),
+      );
 
-      // const hydratedShowtime = {
-      //   ...createdShowtime,
-      //   Movie: matchedMovie || null,
-      //   Room: matchedRoom || null,
-      // };
+      const hydratedShowtime = {
+        ...createdShowtime,
+        Movie: matchedMovie || null,
+        Room: matchedRoom || null,
+      };
 
-      // toast.success("Tạo suất chiếu thành công");
+      toast.success("Tạo suất chiếu thành công");
       // handleOpenEdit(hydratedShowtime);
     } catch (error) {
       toast.error(

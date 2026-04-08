@@ -1,3 +1,5 @@
+
+
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageHeader from "../../components/common/PageHeader";
@@ -16,33 +18,6 @@ const TIME_SLOT_OPTIONS = [
   { value: "18-24", label: "Tối (18:00 - 24:00)", icon: "🌙" },
 ];
 
-function isSameDate(dateValue, selectedDate) {
-  if (!selectedDate) return true;
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return false;
-
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-
-  return `${yyyy}-${mm}-${dd}` === selectedDate;
-}
-
-function isInTimeSlot(dateValue, timeSlot) {
-  if (!timeSlot) return true;
-
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return false;
-
-  const hour = date.getHours();
-
-  if (timeSlot === "9-12") return hour >= 9 && hour < 12;
-  if (timeSlot === "12-18") return hour >= 12 && hour < 18;
-  if (timeSlot === "18-24") return hour >= 18 && hour < 24;
-
-  return true;
-}
-
 export default function ShowtimesPage() {
   const [filters, setFilters] = useState({
     date: "",
@@ -51,20 +26,27 @@ export default function ShowtimesPage() {
     timeSlot: "",
   });
 
-  const showtimesQuery = useShowtimes();
+  const queryParams = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(filters).filter(
+          ([, value]) => value !== "" && value !== null && value !== undefined,
+        ),
+      ),
+    [filters],
+  );
+
+  const showtimesQuery = useShowtimes(queryParams);
   const moviesQuery = useMovies();
 
-  const allShowtimes = showtimesQuery.data || [];
-
-  const baseFilteredByDate = useMemo(() => {
-    return allShowtimes.filter((showtime) =>
-      isSameDate(showtime.startTime, filters.date),
-    );
-  }, [allShowtimes, filters.date]);
+  // Query public để gom room option cho user chọn
+  // Có thể giữ theo ngày để room list bám đúng ngày đang lọc
+  const roomSourceQuery = useShowtimes(
+    filters.date ? { date: filters.date } : {},
+  );
 
   const movieOptions = useMemo(() => {
     const movies = moviesQuery.data || [];
-
     return [
       { value: "", label: "Tất cả phim" },
       ...movies.map((movie) => ({
@@ -79,9 +61,11 @@ export default function ShowtimesPage() {
   }, [moviesQuery.data]);
 
   const roomOptions = useMemo(() => {
+    const showtimes = roomSourceQuery.data || [];
+
     const uniqueRoomsMap = new Map();
 
-    baseFilteredByDate.forEach((showtime) => {
+    showtimes.forEach((showtime) => {
       const room = showtime.Room;
       if (!room?.id) return;
 
@@ -99,26 +83,7 @@ export default function ShowtimesPage() {
       { value: "", label: "Tất cả phòng" },
       ...Array.from(uniqueRoomsMap.values()),
     ];
-  }, [baseFilteredByDate]);
-
-  const filteredShowtimes = useMemo(() => {
-    return allShowtimes.filter((showtime) => {
-      const movieOk =
-        !filters.movieId ||
-        String(showtime.movieId ?? showtime.Movie?.id ?? "") ===
-          String(filters.movieId);
-
-      const roomOk =
-        !filters.roomId ||
-        String(showtime.roomId ?? showtime.Room?.id ?? "") ===
-          String(filters.roomId);
-
-      const dateOk = isSameDate(showtime.startTime, filters.date);
-      const timeOk = isInTimeSlot(showtime.startTime, filters.timeSlot);
-
-      return movieOk && roomOk && dateOk && timeOk;
-    });
-  }, [allShowtimes, filters]);
+  }, [roomSourceQuery.data]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -127,21 +92,12 @@ export default function ShowtimesPage() {
     }));
   };
 
-  const handleResetFilters = () => {
-    setFilters({
-      date: "",
-      roomId: "",
-      movieId: "",
-      timeSlot: "",
-    });
-  };
-
   return (
     <div className="space-y-6">
       <PageHeader title="Lịch chiếu" />
 
       <div className="card grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-4">
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <label className="label">Ngày chiếu</label>
           <input
             type="date"
@@ -149,7 +105,7 @@ export default function ShowtimesPage() {
             value={filters.date}
             onChange={(e) => handleFilterChange("date", e.target.value)}
           />
-        </div>
+        </div> */}
 
         <div className="space-y-2">
           <label className="label">Phim</label>
@@ -161,6 +117,7 @@ export default function ShowtimesPage() {
             searchable
             clearable
             loading={moviesQuery.isLoading}
+            multiple
           />
         </div>
 
@@ -173,7 +130,8 @@ export default function ShowtimesPage() {
             placeholder="Chọn phòng"
             searchable
             clearable
-            loading={showtimesQuery.isLoading}
+            loading={roomSourceQuery.isLoading}
+            multiple
           />
         </div>
 
@@ -185,17 +143,8 @@ export default function ShowtimesPage() {
             options={TIME_SLOT_OPTIONS}
             placeholder="Chọn khung giờ"
             clearable
+            multiple
           />
-        </div>
-
-        <div className="md:col-span-2 xl:col-span-4 flex justify-end">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={handleResetFilters}
-          >
-            Xóa bộ lọc
-          </button>
         </div>
       </div>
 
@@ -208,18 +157,14 @@ export default function ShowtimesPage() {
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
-          {filteredShowtimes.length ? (
-            filteredShowtimes.map((showtime) => (
-              <div
-                className="card-premium flex overflow-hidden"
-                key={showtime.id}
-              >
-                <div className="relative flex w-36 shrink-0 items-center justify-center">
+          {showtimesQuery.data?.length ? (
+            showtimesQuery.data?.slice(0, 6).map((showtime) => (
+              <div className="card-premium flex overflow-hidden" key={showtime.id}>
+                <div className="w-36 shrink-0 relative flex items-center justify-center">
                   {showtime.Movie?.posterUrl ? (
                     <img
-                      src={`${BASE_URL_API ?? "http://localhost:3000"}${
-                        showtime.Movie?.posterUrl
-                      }`}
+                      // src={showtime.Movie?.posterUrl}
+                      src={`${BASE_URL_API ?? "http://localhost:3000"}${showtime.Movie?.posterUrl}`}
                       alt={showtime.Movie?.title}
                       className="h-full w-full object-cover"
                     />
@@ -228,35 +173,30 @@ export default function ShowtimesPage() {
                       No poster
                     </div>
                   )}
-
-                  <span className="absolute badge bg-brand-50 text-brand-700">
+                  <span className="block absolute badge bg-brand-50 text-brand-700">
                     {showtime.status}
                   </span>
                 </div>
-
-                <div className="flex w-full flex-col p-4">
+                <div className="p-4 w-full flex flex-col" key={showtime.id}>
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <h3 className="font-semibold text-slate-900">
                         {showtime.Movie?.title}
                       </h3>
-                      <p className="text-sm font-medium text-slate-500">
+                      <p className="text-sm text-slate-500 font-medium">
                         {showtime.Room?.Cinema?.name} · {showtime.Room?.name}
                       </p>
                     </div>
                   </div>
-
                   <p className="mt-4 text-xs text-slate-600">
                     {formatDateTime(showtime.startTime)}
                   </p>
-
                   <div className="text-lg font-bold text-brand-600">
                     {formatCurrency(showtime.basePrice)}
                   </div>
-
                   <Link
                     to={`/booking/${showtime.id}`}
-                    className="btn-primary mt-auto w-full"
+                    className="mt-auto btn-primary w-full"
                   >
                     Đặt ngay
                   </Link>

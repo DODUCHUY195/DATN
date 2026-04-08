@@ -1,3 +1,5 @@
+
+
 import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -92,21 +94,13 @@ export default function AdminShowtimesPage() {
       const existingStart = new Date(showtime.startTime).getTime();
       const existingEnd = new Date(showtime.endTime).getTime();
 
-      if (editingShowtime?.id && showtime.id === editingShowtime.id)
-        return false;
+      if (editingShowtime?.id && showtime.id === editingShowtime.id) return false;
       if (existingRoomId !== String(watchedRoomId)) return false;
-      if (Number.isNaN(existingStart) || Number.isNaN(existingEnd))
-        return false;
+      if (Number.isNaN(existingStart) || Number.isNaN(existingEnd)) return false;
 
       return newStart < existingEnd && newEnd > existingStart;
     });
-  }, [
-    showtimes,
-    watchedRoomId,
-    watchedStartTime,
-    watchedEndTime,
-    editingShowtime,
-  ]);
+  }, [showtimes, watchedRoomId, watchedStartTime, watchedEndTime, editingShowtime]);
 
   const hasConflict = conflictingShowtimes.length > 0;
 
@@ -124,7 +118,8 @@ export default function AdminShowtimesPage() {
         .some((v) => String(v).toLowerCase().includes(keyword)),
   });
 
-  const isSubmitting = m.createShowtime.isPending || m.updateShowtime.isPending;
+  const isSubmitting =
+    m.createShowtime.isPending || m.updateShowtime.isPending;
 
   const handleCloseFormModal = () => {
     setOpen(false);
@@ -161,47 +156,6 @@ export default function AdminShowtimesPage() {
     setDetailTarget(null);
   };
 
-  // const onSubmit = form.handleSubmit(async (values) => {
-  //   if (hasConflict) {
-  //     toast.error(
-  //       editingShowtime
-  //         ? "Không thể cập nhật vì suất chiếu đang bị trùng khung giờ trong cùng phòng"
-  //         : "Không thể tạo vì suất chiếu đang bị trùng khung giờ trong cùng phòng",
-  //     );
-  //     return;
-  //   }
-
-  //   const payload = {
-  //     movieId: Number(values.movieId),
-  //     roomId: Number(values.roomId),
-  //     startTime: toIsoString(values.startTime),
-  //     endTime: toIsoString(values.endTime),
-  //     basePrice: Number(values.basePrice),
-  //     status: values.status,
-  //   };
-
-  //   try {
-  //     if (editingShowtime) {
-  //       await m.updateShowtime.mutateAsync({
-  //         id: editingShowtime.id,
-  //         payload,
-  //       });
-  //       toast.success("Cập nhật suất chiếu thành công");
-  //     } else {
-  //       await m.createShowtime.mutateAsync(payload);
-  //       toast.success("Tạo suất chiếu thành công");
-  //     }
-
-  //     handleCloseFormModal();
-  //   } catch (error) {
-  //     toast.error(
-  //       error?.response?.data?.message ||
-  //         (editingShowtime
-  //           ? "Không thể cập nhật suất chiếu"
-  //           : "Không thể tạo suất chiếu"),
-  //     );
-  //   }
-  // });
   const onSubmit = form.handleSubmit(async (values) => {
     if (hasConflict) {
       toast.error(
@@ -228,35 +182,12 @@ export default function AdminShowtimesPage() {
           payload,
         });
         toast.success("Cập nhật suất chiếu thành công");
-        handleCloseFormModal();
-        return;
-      }
-
-      const response = await m.createShowtime.mutateAsync(payload);
-      const createdShowtime = response?.data?.data;
-
-      if (!createdShowtime?.id) {
+      } else {
+        await m.createShowtime.mutateAsync(payload);
         toast.success("Tạo suất chiếu thành công");
-        handleCloseFormModal();
-        return;
       }
 
-      // const matchedMovie = (moviesQuery.data || []).find(
-      //   (movie) => String(movie.id) === String(createdShowtime.movieId),
-      // );
-
-      // const matchedRoom = (roomsQuery.data || []).find(
-      //   (room) => String(room.id) === String(createdShowtime.roomId),
-      // );
-
-      // const hydratedShowtime = {
-      //   ...createdShowtime,
-      //   Movie: matchedMovie || null,
-      //   Room: matchedRoom || null,
-      // };
-
-      // toast.success("Tạo suất chiếu thành công");
-      // handleOpenEdit(hydratedShowtime);
+      handleCloseFormModal();
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
@@ -266,6 +197,7 @@ export default function AdminShowtimesPage() {
       );
     }
   });
+
   const confirmDelete = async () => {
     try {
       if (bulkDeleteMode) {
@@ -282,7 +214,9 @@ export default function AdminShowtimesPage() {
 
       setDeleteTarget(null);
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Không thể xóa suất chiếu");
+      toast.error(
+        error?.response?.data?.message || "Không thể xóa suất chiếu",
+      );
     }
   };
 
@@ -377,11 +311,7 @@ export default function AdminShowtimesPage() {
     },
   ];
 
-  if (
-    showtimesQuery.isLoading ||
-    moviesQuery.isLoading ||
-    roomsQuery.isLoading
-  ) {
+  if (showtimesQuery.isLoading || moviesQuery.isLoading || roomsQuery.isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-2">
         {Array.from({ length: 6 }).map((_, i) => (
@@ -624,8 +554,7 @@ export default function AdminShowtimesPage() {
                           className="rounded-xl bg-white/80 p-3 dark:bg-slate-900/60"
                         >
                           <p className="font-medium">
-                            #{item.id} ·{" "}
-                            {item.Movie?.title || "Không rõ tên phim"}
+                            #{item.id} · {item.Movie?.title || "Không rõ tên phim"}
                           </p>
                           <p className="text-sm">
                             {item.Room?.Cinema?.name || "Chưa có rạp"} ·{" "}
