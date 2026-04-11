@@ -65,7 +65,8 @@ export default function AdminCinemasPage() {
               {(cinema.Rooms || []).map((room) => (
                 <div key={room.id} className="rounded-2xl border border-slate-200 p-4 dark:border-slate-800">
                   <p className="font-semibold text-slate-950 dark:text-white">{room.name}</p>
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sức chứa seat layout cấu hình từ admin</p>
+                  <p className=''>Số hàng: {room.rowCount} x Số ghế mỗi hàng: {room.colCount}</p>
+                  {/* <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Sức chứa seat layout cấu hình từ admin</p> */}
                 </div>
               ))}
             </div>

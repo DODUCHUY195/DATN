@@ -67,6 +67,55 @@ const normalizeMovieMeta = (movie) => {
   ].filter((item) => item.value);
 };
 
+/**
+ * Validate ghế:
+ * - 1 ghế: luôn hợp lệ
+ * - từ 2 ghế trở lên:
+ *   + phải cùng hàng
+ *   + seatNumber phải liền nhau (ví dụ 5,6,7)
+ */
+const validateAdjacentSeats = (seats) => {
+  if (!Array.isArray(seats) || seats.length <= 1) {
+    return {
+      valid: true,
+      message: "",
+    };
+  }
+
+  const firstRow = String(seats[0]?.rowLabel ?? "");
+  const isSameRow = seats.every(
+    (seat) => String(seat?.rowLabel ?? "") === firstRow,
+  );
+
+  if (!isSameRow) {
+    return {
+      valid: false,
+      message:
+        "Khi chọn từ 2 ghế trở lên, vui lòng chọn các ghế liền kề trong cùng một hàng.",
+    };
+  }
+
+  const seatNumbers = seats
+    .map((seat) => Number(seat?.seatNumber))
+    .filter((num) => !Number.isNaN(num))
+    .sort((a, b) => a - b);
+
+  for (let i = 1; i < seatNumbers.length; i += 1) {
+    if (seatNumbers[i] - seatNumbers[i - 1] !== 1) {
+      return {
+        valid: false,
+        message:
+          "Ghế đã chọn phải nằm liền kề nhau. Vui lòng không bỏ trống ghế ở giữa.",
+      };
+    }
+  }
+
+  return {
+    valid: true,
+    message: "",
+  };
+};
+
 export default function BookingFlowPage() {
   const { showtimeId } = useParams();
   const previousShowtimeIdRef = useRef(showtimeId);
@@ -135,6 +184,28 @@ export default function BookingFlowPage() {
     };
   }, [resetBooking]);
 
+  const handleToggleSeatWithValidation = (seat) => {
+    const isSelected = selectedSeats.some(
+      (selectedSeat) => String(selectedSeat.id) === String(seat.id),
+    );
+
+    // Nếu đang được chọn rồi thì cho bỏ chọn bình thường
+    if (isSelected) {
+      toggleSeat(seat);
+      return;
+    }
+
+    const nextSelectedSeats = [...selectedSeats, seat];
+    const validation = validateAdjacentSeats(nextSelectedSeats);
+
+    if (!validation.valid) {
+      toast.error(validation.message);
+      return;
+    }
+
+    toggleSeat(seat);
+  };
+
   if (seatQuery.isLoading || snacksQuery.isLoading) {
     return (
       <div className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
@@ -154,6 +225,13 @@ export default function BookingFlowPage() {
   }
 
   const handleHoldSeats = async () => {
+    const validation = validateAdjacentSeats(selectedSeats);
+
+    if (!validation.valid) {
+      toast.error(validation.message);
+      return;
+    }
+
     const response = await holdMutation.mutateAsync({
       showtimeId: Number(showtimeId),
       seatIds: selectedSeats.map((seat) => seat.id),
@@ -196,7 +274,6 @@ export default function BookingFlowPage() {
               <div className="h-[220px] w-full overflow-hidden rounded-3xl bg-slate-100 md:w-[160px] md:min-w-[160px]">
                 {posterUrl ? (
                   <img
-                    // src={posterUrl}
                     src={`${BASE_URL_API ?? "http://localhost:3000"}${posterUrl}`}
                     alt={movie?.title || "Poster phim"}
                     className="h-full w-full object-cover"
@@ -276,7 +353,7 @@ export default function BookingFlowPage() {
           <SeatMap
             seats={seatQuery.data || []}
             selectedSeats={selectedSeats}
-            onToggle={toggleSeat}
+            onToggle={handleToggleSeatWithValidation}
           />
         </div>
 
