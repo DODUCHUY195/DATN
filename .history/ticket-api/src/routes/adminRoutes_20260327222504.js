@@ -622,27 +622,12 @@ router.patch(
  * /api/admin/dashboard:
  *   get:
  *     tags: [Admin]
- *     summary: Dashboard thong ke kinh doanh, phim va suat chieu
+ *     summary: Dashboard thong ke
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: dateFrom
- *         required: false
- *         schema:
- *           type: string
- *           format: date
- *         description: Ngay bat dau loc du lieu (mac dinh la dau thang hien tai)
- *       - in: query
- *         name: dateTo
- *         required: false
- *         schema:
- *           type: string
- *           format: date
- *         description: Ngay ket thuc loc du lieu (mac dinh la cuoi thang hien tai)
  *     responses:
  *       200:
- *         description: Thong ke tong quan va chi tiet
+ *         description: Thong ke tong quan
  *         content:
  *           application/json:
  *             schema:
@@ -651,19 +636,46 @@ router.patch(
  *                 data:
  *                   type: object
  *                   properties:
- *                     filters:
- *                       type: object
- *                     business:
- *                       type: object
- *                       properties:
- *                         revenue:
- *                           type: object
- *                         tickets:
- *                           type: object
- *                     movies:
- *                       type: object
- *                     showtimes:
- *                       type: object
+ *                     totalTicketsSold:
+ *                       type: integer
+ *                       example: 120
+ *                     revenue:
+ *                       type: number
+ *                       example: 5000000
+ *                     popularShowtimes:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           showtimeId:
+ *                             type: integer
+ *                           seatCount:
+ *                             type: integer
+ *                           Showtime:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               startTime:
+ *                                 type: string
+ *                                 format: date-time
+ *                               endTime:
+ *                                 type: string
+ *                                 format: date-time
+ *                               Movie:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                   title:
+ *                                     type: string
+ *                               Room:
+ *                                 type: object
+ *                                 properties:
+ *                                   id:
+ *                                     type: integer
+ *                                   name:
+ *                                     type: string
  */
 
 router.get("/dashboard", asyncHandler(adminController.dashboard));
