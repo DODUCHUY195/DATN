@@ -37,21 +37,34 @@ export const bookingsApi = {
 export const adminApi = {
   users: () => api.get('/admin/users'),
   lockUser: (id, payload) => api.patch(`/admin/users/${id}/lock`, payload),
+
   movies: () => api.get('/admin/movies'),
-  createMovie: (payload) => api.post('/admin/movies', payload, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  updateMovie: (id, payload) => api.put(`/admin/movies/${id}`, payload, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  createMovie: (payload) =>
+    api.post('/admin/movies', payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateMovie: (id, payload) =>
+    api.put(`/admin/movies/${id}`, payload, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   deleteMovie: (id) => api.delete(`/admin/movies/${id}`),
+
   cinemas: () => api.get('/admin/cinemas'),
   createCinema: (payload) => api.post('/admin/cinemas', payload),
+
   rooms: () => api.get('/admin/rooms'),
   createRoom: (payload) => api.post('/admin/rooms', payload),
-  configureSeats: (roomId, payload) => api.post(`/admin/rooms/${roomId}/seats/configure`, payload),
+  configureSeats: (roomId, payload) =>
+    api.post(`/admin/rooms/${roomId}/seats/configure`, payload),
+
   showtimes: () => api.get('/admin/showtimes'),
   createShowtime: (payload) => api.post('/admin/showtimes', payload),
   updateShowtime: (id, payload) => api.put(`/admin/showtimes/${id}`, payload),
   deleteShowtime: (id) => api.delete(`/admin/showtimes/${id}`),
+
   bookings: () => api.get('/admin/bookings'),
   confirmBooking: (id) => api.patch(`/admin/bookings/${id}/confirm`),
   cancelBooking: (id) => api.patch(`/admin/bookings/${id}/cancel`),
-  dashboard: () => api.get('/admin/dashboard'),
+
+  dashboard: (params) => api.get('/admin/dashboard', { params }),
 };
