@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import PageHeader from "../../components/common/PageHeader";
 import ErrorState from "../../components/common/ErrorState";
@@ -11,13 +11,45 @@ import { useAdminBookings, useAdminMutations } from "../../hooks/useAdmin";
 import { formatCurrency, formatDateTime } from "../../utils/format";
 import { PERMISSIONS } from "../../constants/permissions";
 
+function normalizeBookingStatus(status) {
+  return String(status || "PENDING").toUpperCase();
+}
+
+function canConfirmBooking(booking) {
+  return normalizeBookingStatus(booking?.status) === "PENDING";
+}
+
+function canCancelBooking(booking) {
+  const status = normalizeBookingStatus(booking?.status);
+
+  return status === "PENDING" || status === "CONFIRMED";
+}
+
+function getStatusBadgeClass(status) {
+  const normalizedStatus = normalizeBookingStatus(status);
+
+  if (normalizedStatus === "CONFIRMED") {
+    return "badge bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300";
+  }
+
+  if (normalizedStatus === "CANCELED" || normalizedStatus === "CANCELLED") {
+    return "badge bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300";
+  }
+
+  return "badge bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300";
+}
+
 export default function AdminBookingsPage() {
   const bookingsQuery = useAdminBookings();
   const m = useAdminMutations();
+
   const [confirmTarget, setConfirmTarget] = useState(null);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [bulkMode, setBulkMode] = useState(null);
+  const [bulkTargets, setBulkTargets] = useState([]);
+
   const bookings = bookingsQuery.data || [];
+
   const table = useTableState(bookings, {
     pageSize: 8,
     defaultSort: { key: "id", direction: "desc" },
@@ -33,20 +65,71 @@ export default function AdminBookingsPage() {
         .some((v) => String(v).toLowerCase().includes(keyword)),
   });
 
+  const selectedBookings = useMemo(() => {
+    const selectedIdSet = new Set(table.selectedIds.map((id) => String(id)));
+
+    return bookings.filter((booking) => selectedIdSet.has(String(booking.id)));
+  }, [bookings, table.selectedIds]);
+
+  const openBulkConfirm = () => {
+    const validTargets = selectedBookings.filter(canConfirmBooking);
+
+    if (!validTargets.length) {
+      toast.error("Không có booking PENDING nào có thể xác nhận.");
+      return;
+    }
+
+    setBulkTargets(validTargets);
+    setBulkMode("confirm");
+    setConfirmTarget({});
+  };
+
+  const openBulkCancel = () => {
+    const validTargets = selectedBookings.filter(canCancelBooking);
+
+    if (!validTargets.length) {
+      toast.error("Không có booking nào có thể hủy.");
+      return;
+    }
+
+    setBulkTargets(validTargets);
+    setBulkMode("cancel");
+    setCancelTarget({});
+  };
+
+  const resetConfirmDialog = () => {
+    setConfirmTarget(null);
+    setBulkMode(null);
+    setBulkTargets([]);
+  };
+
+  const resetCancelDialog = () => {
+    setCancelTarget(null);
+    setBulkMode(null);
+    setBulkTargets([]);
+  };
+
   const doConfirm = async () => {
     try {
       if (bulkMode === "confirm") {
         await Promise.all(
-          table.selectedIds.map((id) => m.confirmBooking.mutateAsync(id)),
+          bulkTargets.map((booking) => m.confirmBooking.mutateAsync(booking.id)),
         );
-        toast.success(`Đã xác nhận ${table.selectedIds.length} vé`);
+
+        toast.success(`Đã xác nhận ${bulkTargets.length} vé`);
         table.setSelectedIds([]);
       } else {
+        if (!canConfirmBooking(confirmTarget)) {
+          toast.error("Booking này không thể xác nhận.");
+          resetConfirmDialog();
+          return;
+        }
+
         await m.confirmBooking.mutateAsync(confirmTarget.id);
         toast.success("Đã xác nhận vé");
       }
-      setConfirmTarget(null);
-      setBulkMode(null);
+
+      resetConfirmDialog();
     } catch {
       toast.error("Không thể cập nhật booking");
     }
@@ -56,16 +139,23 @@ export default function AdminBookingsPage() {
     try {
       if (bulkMode === "cancel") {
         await Promise.all(
-          table.selectedIds.map((id) => m.cancelBooking.mutateAsync(id)),
+          bulkTargets.map((booking) => m.cancelBooking.mutateAsync(booking.id)),
         );
-        toast.success(`Đã hủy ${table.selectedIds.length} vé`);
+
+        toast.success(`Đã hủy ${bulkTargets.length} vé`);
         table.setSelectedIds([]);
       } else {
+        if (!canCancelBooking(cancelTarget)) {
+          toast.error("Booking này không thể hủy.");
+          resetCancelDialog();
+          return;
+        }
+
         await m.cancelBooking.mutateAsync(cancelTarget.id);
         toast.success("Đã hủy vé");
       }
-      setCancelTarget(null);
-      setBulkMode(null);
+
+      resetCancelDialog();
     } catch {
       toast.error("Không thể cập nhật booking");
     }
@@ -120,35 +210,59 @@ export default function AdminBookingsPage() {
       key: "status",
       label: "Trạng thái",
       sortable: true,
-      render: (booking) => (
-        <span className="badge bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">
-          {booking.status || "PENDING"}
-        </span>
-      ),
+      render: (booking) => {
+        const status = normalizeBookingStatus(booking.status);
+
+        return (
+          <span className={getStatusBadgeClass(status)}>
+            {status}
+          </span>
+        );
+      },
     },
     {
       key: "actions",
       label: "Thao tác",
-      render: (booking) => (
-        <div className="flex flex-wrap gap-2">
-          <button
-            className="btn-secondary"
-            onClick={() => setConfirmTarget(booking)}
-          >
-            Xác nhận
-          </button>
-          <button
-            className="btn-danger"
-            onClick={() => setCancelTarget(booking)}
-          >
-            Hủy vé
-          </button>
-        </div>
-      ),
+      render: (booking) => {
+        const canConfirm = canConfirmBooking(booking);
+        const canCancel = canCancelBooking(booking);
+
+        if (!canConfirm && !canCancel) {
+          return (
+            <span className="text-sm text-slate-400">
+              {/* Không có thao tác */}
+            </span>
+          );
+        }
+
+        return (
+          <div className="flex flex-wrap gap-2">
+            {canConfirm && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setConfirmTarget(booking)}
+              >
+                Xác nhận
+              </button>
+            )}
+
+            {canCancel && (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => setCancelTarget(booking)}
+              >
+                Hủy vé
+              </button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
-  if (bookingsQuery.isLoading)
+  if (bookingsQuery.isLoading) {
     return (
       <div className="grid gap-4">
         {Array.from({ length: 5 }).map((_, i) => (
@@ -156,21 +270,22 @@ export default function AdminBookingsPage() {
         ))}
       </div>
     );
-  if (bookingsQuery.isError)
+  }
+
+  if (bookingsQuery.isError) {
     return (
       <ErrorState
         message="Không tải được booking"
         onRetry={bookingsQuery.refetch}
       />
     );
+  }
 
   return (
     <PermissionGate permissions={[PERMISSIONS.BOOKINGS_VIEW]}>
       <div className="space-y-6">
-        <PageHeader
-          title="Quản lý booking"
-          // description="Theo dõi toàn bộ booking, có search/filter/sort và xử lý hàng loạt theo chuẩn admin portal."
-        />
+        <PageHeader title="Quản lý booking" />
+
         <DataTable
           title="Danh sách booking"
           description="Tìm theo mã vé, khách hàng, phim và trạng thái."
@@ -203,7 +318,11 @@ export default function AdminBookingsPage() {
               value: table.status,
               onChange: table.setStatus,
               options: [
-                { value: "ALL", label: "Tất cả trạng thái", emoji: "🎟️" },
+                {
+                  value: "ALL",
+                  label: "Tất cả trạng thái",
+                  emoji: "🎟️",
+                },
                 {
                   value: "PENDING",
                   label: "PENDING",
@@ -228,34 +347,26 @@ export default function AdminBookingsPage() {
           bulkActions={[
             {
               key: "confirm",
-              label: "Xác nhận đã chọn",
-              onClick: () => {
-                setBulkMode("confirm");
-                setConfirmTarget({});
-              },
+              label: "Xác nhận vé PENDING đã chọn",
+              onClick: openBulkConfirm,
             },
             {
               key: "cancel",
-              label: "Hủy đã chọn",
+              label: "Hủy vé hợp lệ đã chọn",
               tone: "danger",
-              onClick: () => {
-                setBulkMode("cancel");
-                setCancelTarget({});
-              },
+              onClick: openBulkCancel,
             },
           ]}
         />
+
         <ConfirmDialog
           open={!!confirmTarget}
-          onClose={() => {
-            setConfirmTarget(null);
-            setBulkMode(null);
-          }}
+          onClose={resetConfirmDialog}
           onConfirm={doConfirm}
           title={bulkMode === "confirm" ? "Xác nhận nhiều vé" : "Xác nhận vé"}
           description={
             bulkMode === "confirm"
-              ? `Có ${table.selectedIds.length} booking sẽ được chuyển sang trạng thái xác nhận.`
+              ? `Có ${bulkTargets.length} booking PENDING sẽ được chuyển sang trạng thái xác nhận. Các booking không hợp lệ sẽ được bỏ qua.`
               : `Booking #${confirmTarget?.id || ""} sẽ được chuyển sang trạng thái xác nhận.`
           }
           confirmText={
@@ -263,20 +374,19 @@ export default function AdminBookingsPage() {
           }
           tone="primary"
         />
+
         <ConfirmDialog
           open={!!cancelTarget}
-          onClose={() => {
-            setCancelTarget(null);
-            setBulkMode(null);
-          }}
+          onClose={resetCancelDialog}
           onConfirm={doCancel}
           title={bulkMode === "cancel" ? "Hủy nhiều vé" : "Hủy vé"}
           description={
             bulkMode === "cancel"
-              ? `Có ${table.selectedIds.length} booking sẽ bị hủy.`
+              ? `Có ${bulkTargets.length} booking hợp lệ sẽ bị hủy. Các booking không hợp lệ sẽ được bỏ qua.`
               : `Booking #${cancelTarget?.id || ""} sẽ bị hủy.`
           }
           confirmText={bulkMode === "cancel" ? "Hủy tất cả" : "Hủy vé"}
+          tone="danger"
         />
       </div>
     </PermissionGate>
