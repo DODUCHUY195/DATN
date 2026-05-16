@@ -7,6 +7,7 @@ const {
   generateBookingCode,
   generateTicketCode,
 } = require("../utils/bookingCode");
+const { calculateSeatPrice } = require("../utils/seatPricing");
 const {
   sequelize,
   Booking,
@@ -45,13 +46,6 @@ const cleanupExpiredReservations = async (transaction) => {
       transaction,
     },
   );
-};
-
-const calculateSeatPrice = (basePrice, seatType) => {
-  if (seatType === "COUPLE") {
-    return Number(basePrice) * 1.8;
-  }
-  return Number(basePrice);
 };
 
 const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
@@ -127,9 +121,32 @@ const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
 
     let total = 0;
 
+    // Re-check for conflicts immediately before creating reservations
+    // This catches any race conditions from concurrent requests
+    const lastMinuteConflicts = await SeatReservation.count({
+      where: {
+        showtimeId,
+        seatId: seatIds,
+        [Op.or]: [
+          { status: "BOOKED" },
+          {
+            status: "HELD",
+            expiresAt: { [Op.gt]: now },
+          },
+        ],
+      },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (lastMinuteConflicts > 0) {
+      throw new ApiError(409, "Một số ghế đã được đặt trước.");
+    }
+
     for (const seat of seats) {
-      const seatPrice = calculateSeatPrice(showtime.basePrice, seat.type);
+      const seatPrice = calculateSeatPrice(showtime.basePrice, seat.type, seat.price);
       total += seatPrice;
+      
       await SeatReservation.create(
         {
           showtimeId,
@@ -181,7 +198,7 @@ const holdSeats = async ({ userId, showtimeId, seatIds, snacks = [] }) => {
   });
 };
 
-const confirmPayment = async ({ bookingId, userId, method = "DEMO" }) => {
+const confirmPayment = async ({ bookingId, userId, method = "DEMO", transactionRef = null }) => {
   return sequelize.transaction(async (transaction) => {
     await cleanupExpiredReservations(transaction);
 
@@ -217,6 +234,16 @@ const confirmPayment = async ({ bookingId, userId, method = "DEMO" }) => {
       throw new ApiError(400, "Thời gian giữ chỗ đã hết hạn.");
     }
 
+    // Check if payment already exists (prevent double-charging)
+    const existingPayment = await Payment.findOne({
+      where: { bookingId: booking.id },
+      transaction,
+    });
+
+    if (existingPayment) {
+      throw new ApiError(400, "Thanh toán cho đơn đặt vé này đã được thực hiện.");
+    }
+
     await SeatReservation.update(
       { status: "BOOKED", expiresAt: null },
       {
@@ -235,7 +262,7 @@ const confirmPayment = async ({ bookingId, userId, method = "DEMO" }) => {
         bookingId: booking.id,
         method,
         status: "SUCCESS",
-        transactionRef: `DEMO-${Date.now()}`,
+        transactionRef: transactionRef || `${method}-${Date.now()}`,
         paidAt: new Date(),
         amount: booking.totalAmount,
       },

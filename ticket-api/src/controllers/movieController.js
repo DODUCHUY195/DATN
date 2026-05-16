@@ -1,5 +1,6 @@
 const { Op, where, fn, col } = require("sequelize");
 const dayjs = require("dayjs");
+const { calculateSeatPrice } = require("../utils/seatPricing");
 const {
   Movie,
   Showtime,
@@ -96,11 +97,14 @@ const getSeatMapByShowtime = async (req, res) => {
 
   const map = seats.map((seat) => {
     const reservation = reservations.find((r) => r.seatId === seat.id);
+    const customPrice = seat.price != null ? Number(seat.price) : null;
     return {
       id: seat.id,
       rowLabel: seat.rowLabel,
       seatNumber: seat.seatNumber,
       type: seat.type,
+      price: customPrice,
+      unitPrice: calculateSeatPrice(showtime.basePrice, seat.type, customPrice),
       status: reservation
         ? reservation.status === "BOOKED"
           ? "BOOKED"

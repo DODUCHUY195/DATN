@@ -120,6 +120,7 @@ const adminSchemas = {
             rowLabel: Joi.string().max(4).required(),
             seatNumber: Joi.number().integer().positive().required(),
             type: Joi.string().valid("SINGLE", "COUPLE").optional(),
+            price: Joi.number().min(0).allow(null).optional(),
             isActive: Joi.boolean().optional(),
           }),
         )
@@ -169,6 +170,31 @@ const adminSchemas = {
       durationMinutes: Joi.number().integer().positive().optional(),
       releaseDate: Joi.date().iso().optional(),
       status: Joi.string().valid("NOW_SHOWING", "COMING_SOON").optional(),
+    },
+  },
+  createDirectBooking: {
+    body: {
+      userId: Joi.number().integer().positive().optional(),
+      customerInfo: Joi.object({
+        fullName: Joi.string().min(2).max(120).required(),
+        email: Joi.string().email().max(160).required(),
+        phone: Joi.string().max(20).required(),
+      }).allow(null).optional(),
+      showtimeId: Joi.number().integer().positive().required(),
+      seatIds: Joi.array()
+        .items(Joi.number().integer().positive())
+        .min(1)
+        .required(),
+      paymentStatus: Joi.string().valid("PAID", "PENDING").optional(),
+      paymentMethod: Joi.string().optional(),
+      snacks: Joi.array()
+        .items(
+          Joi.object({
+            snackId: Joi.number().integer().positive().required(),
+            quantity: Joi.number().integer().min(1).max(20).required(),
+          }),
+        )
+        .optional(),
     },
   },
 };

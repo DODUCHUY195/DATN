@@ -38,16 +38,13 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   const user = await User.findOne({ where: { email } });
-  if (!user) {
-    throw new ApiError(401, "Email hoặc mật khẩu không hợp lệ.");
-  }
+  
+  // Always run bcrypt comparison to prevent timing attacks (email enumeration)
+  // Use a dummy hash if user doesn't exist
+  const passwordHash = user?.passwordHash || "$2a$10$slurpslurpslurpslurpslurpslurpslurpslurpslurpslurpslurp";
+  const isValid = await bcrypt.compare(password || "", passwordHash);
 
-  if (user.isLocked) {
-    throw new ApiError(403, "Tài khoản đã bị khoá.");
-  }
-
-  const isValid = await bcrypt.compare(password || "", user.passwordHash);
-  if (!isValid) {
+  if (!user || user.isLocked || !isValid) {
     throw new ApiError(401, "Email hoặc mật khẩu không hợp lệ.");
   }
 

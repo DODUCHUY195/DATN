@@ -92,6 +92,40 @@ router.post(
 
 /**
  * @swagger
+ * /api/bookings/{id}/momo-payment:
+ *   post:
+ *     tags: [Bookings]
+ *     summary: Khoi tao thanh toan MoMo
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ */
+router.post(
+  "/:id/momo-payment",
+  auth,
+  validate(bookingSchemas.bookingIdParam),
+  asyncHandler(bookingController.createMomoPayment),
+);
+
+/**
+ * @swagger
+ * /api/bookings/momo-callback:
+ *   post:
+ *     tags: [Bookings]
+ *     summary: Webhook MoMo IPN
+ */
+router.post(
+  "/momo-callback",
+  asyncHandler(bookingController.momoCallback),
+);
+
+/**
+ * @swagger
  * /api/bookings/{id}:
  *   get:
  *     tags: [Bookings]

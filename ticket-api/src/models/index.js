@@ -58,6 +58,11 @@ const Seat = sequelize.define(
       allowNull: false,
       defaultValue: "SINGLE",
     },
+    price: {
+      type: DataTypes.DECIMAL(12, 2),
+      allowNull: true,
+      comment: "Custom price for this seat. If null, uses showtime base price",
+    },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
   },
   {
@@ -164,7 +169,6 @@ const SeatReservation = sequelize.define(
   {
     tableName: "seat_reservations",
     timestamps: true,
-    indexes: [{ unique: true, fields: ["showtimeId", "seatId"] }],
   },
 );
 
@@ -236,7 +240,7 @@ Booking.belongsTo(User, { foreignKey: "userId" });
 Showtime.hasMany(Booking, { foreignKey: "showtimeId" });
 Booking.belongsTo(Showtime, { foreignKey: "showtimeId" });
 
-Booking.hasMany(SeatReservation, { foreignKey: "bookingId" });
+Booking.hasMany(SeatReservation, { foreignKey: "bookingId", onDelete: "CASCADE" });
 SeatReservation.belongsTo(Booking, { foreignKey: "bookingId" });
 
 Showtime.hasMany(SeatReservation, { foreignKey: "showtimeId" });
@@ -245,17 +249,17 @@ SeatReservation.belongsTo(Showtime, { foreignKey: "showtimeId" });
 Seat.hasMany(SeatReservation, { foreignKey: "seatId" });
 SeatReservation.belongsTo(Seat, { foreignKey: "seatId" });
 
-Booking.hasMany(BookingSnack, { foreignKey: "bookingId" });
+Booking.hasMany(BookingSnack, { foreignKey: "bookingId", onDelete: "CASCADE" });
 BookingSnack.belongsTo(Booking, { foreignKey: "bookingId" });
 
 Snack.hasMany(BookingSnack, { foreignKey: "snackId" });
 BookingSnack.belongsTo(Snack, { foreignKey: "snackId" });
 
-Booking.hasMany(Payment, { foreignKey: "bookingId" });
-Payment.belongsTo(Booking, { foreignKey: "bookingId" });
-
-Booking.hasOne(Ticket, { foreignKey: "bookingId" });
+Booking.hasOne(Ticket, { foreignKey: "bookingId", onDelete: "CASCADE" });
 Ticket.belongsTo(Booking, { foreignKey: "bookingId" });
+
+Booking.hasMany(Payment, { foreignKey: "bookingId", onDelete: "CASCADE" });
+Payment.belongsTo(Booking, { foreignKey: "bookingId" });
 
 module.exports = {
   sequelize,

@@ -344,6 +344,32 @@ router.post(
   asyncHandler(adminController.createCinema),
 );
 
+router.put(
+  "/cinemas/:id",
+  asyncHandler(adminController.updateCinema),
+);
+
+/**
+ * @swagger
+ * /api/admin/cinemas/{id}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Xoa rap
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ */
+router.delete(
+  "/cinemas/:id",
+  validate(adminSchemas.userIdParam),
+  asyncHandler(adminController.deleteCinema),
+);
+
 /**
  * @swagger
  * /api/admin/rooms:
@@ -387,6 +413,32 @@ router.post(
   "/rooms",
   validate(adminSchemas.createRoom),
   asyncHandler(adminController.createRoom),
+);
+
+router.put(
+  "/rooms/:id",
+  asyncHandler(adminController.updateRoom),
+);
+
+/**
+ * @swagger
+ * /api/admin/rooms/{id}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Xoa phong chieu
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ */
+router.delete(
+  "/rooms/:id",
+  validate(adminSchemas.userIdParam),
+  asyncHandler(adminController.deleteRoom),
 );
 
 /**
@@ -574,6 +626,101 @@ router.get("/bookings", asyncHandler(adminController.listBookingsAdmin));
 
 /**
  * @swagger
+ * /api/admin/bookings/{id}:
+ *   delete:
+ *     tags: [Admin]
+ *     summary: Xoa booking
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ */
+router.delete(
+  "/bookings/:id",
+  validate(bookingSchemas.bookingIdParam),
+  asyncHandler(adminController.deleteBooking),
+);
+
+/**
+ * @swagger
+ * /api/admin/tickets/verify/{ticketCode}:
+ *   get:
+ *     tags: [Admin]
+ *     summary: Kiem tra thong tin ve qua ma ve (de check-in)
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  "/tickets/verify/:ticketCode",
+  asyncHandler(adminController.verifyTicket),
+);
+
+/**
+ * @swagger
+ * /api/admin/tickets/use/{ticketCode}:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Xac nhan su dung ve (check-in)
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  "/tickets/use/:ticketCode",
+  asyncHandler(adminController.useTicket),
+);
+
+/**
+ * @swagger
+ * /api/admin/bookings/direct:
+ *   post:
+ *     tags: [Admin]
+ *     summary: Dat ve truc tiep tai quay (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [showtimeId, seatIds, paymentStatus]
+ *             properties:
+ *               userId:
+ *                 type: integer
+ *               customerInfo:
+ *                 type: object
+ *                 properties:
+ *                   fullName:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   phone:
+ *                     type: string
+ *               showtimeId:
+ *                 type: integer
+ *               seatIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               paymentStatus:
+ *                 type: string
+ *                 enum: [PAID, PENDING]
+ *     responses:
+ *       201:
+ *         description: Booking created
+ */
+router.post(
+  "/bookings/direct",
+  validate(adminSchemas.createDirectBooking),
+  asyncHandler(adminController.createDirectBooking),
+);
+
+/**
+ * @swagger
  * /api/admin/bookings/{id}/confirm:
  *   patch:
  *     tags: [Admin]
@@ -615,6 +762,27 @@ router.patch(
   "/bookings/:id/cancel",
   validate(bookingSchemas.bookingIdParam),
   asyncHandler(adminController.cancelBookingAdmin),
+);
+
+/**
+ * @swagger
+ * /api/admin/bookings/{id}/pay:
+ *   patch:
+ *     tags: [Admin]
+ *     summary: Danh dau da thanh toan
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ */
+router.patch(
+  "/bookings/:id/pay",
+  validate(bookingSchemas.bookingIdParam),
+  asyncHandler(adminController.markAsPaidAdmin),
 );
 
 /**

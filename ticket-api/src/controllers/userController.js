@@ -4,6 +4,7 @@ const {
   Showtime,
   Movie,
   Room,
+  Cinema,
   SeatReservation,
   BookingSnack,
   Snack,
@@ -53,7 +54,13 @@ const getMyBookings = async (req, res) => {
   const rows = await Booking.findAll({
     where: { userId: req.user.id },
     include: [
-      { model: Showtime, include: [{ model: Movie }, { model: Room }] },
+      { 
+        model: Showtime, 
+        include: [
+          { model: Movie }, 
+          { model: Room, include: [{ model: Cinema }] }
+        ] 
+      },
       { model: SeatReservation, include: [{ model: Seat }] },
       { model: BookingSnack, include: [{ model: Snack }] },
       { model: Ticket },

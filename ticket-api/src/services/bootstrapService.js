@@ -15,12 +15,11 @@ const createSeatsForRoom = async (roomId, rowCount, colCount) => {
   for (let r = 0; r < rowCount; r += 1) {
     const rowLabel = String.fromCharCode(65 + r);
     for (let c = 1; c <= colCount; c += 1) {
-      const isCoupleZone = r >= rowCount - 2 && c >= Math.max(1, colCount - 3);
       rows.push({
         roomId,
         rowLabel,
         seatNumber: c,
-        type: isCoupleZone ? "COUPLE" : "SINGLE",
+        type: "SINGLE",
       });
     }
   }
